@@ -12,7 +12,6 @@ select
     start_date,
     end_date,
     status,
-    current_timestamp()                     as _loaded_at,
-    '{{ this.schema }}.{{ this.name }}'     as _source_relation
+    current_timestamp()                     as load_ts
 
 from {{ source('raw', 'customer') }}

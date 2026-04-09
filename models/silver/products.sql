@@ -9,8 +9,8 @@
 
 with source as (
 
-    select * from {{ ref('products') }}
-    {{ get_incremental_timestamp('_loaded_at', '_processed_at') }}
+    select * from {{ ref('raw_products') }}
+    {{ get_incremental_timestamp('load_ts', '_processed_at') }}
 
 ),
 

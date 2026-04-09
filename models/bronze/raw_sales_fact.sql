@@ -16,7 +16,6 @@ select
     discount_applied,
     shipping_cost,
     created_at,
-    current_timestamp()                     as _loaded_at,
-    '{{ this.schema }}.{{ this.name }}'     as _source_relation
+    current_timestamp()                     as load_ts
 
 from {{ source('raw', 'sales_fact') }}

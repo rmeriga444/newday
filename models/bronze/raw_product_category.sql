@@ -20,7 +20,6 @@ select
     discontinued,
     launch_date,
     last_updated,
-    current_timestamp()                     as _loaded_at,
-    '{{ this.schema }}.{{ this.name }}'     as _source_relation
+    current_timestamp()                     as load_ts
 
 from {{ source('raw', 'product_category') }}

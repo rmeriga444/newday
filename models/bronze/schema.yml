@@ -1,11 +1,8 @@
 version: 2
 
 models:
-
-  - name: sales_fact
-    description: >
-      Bronze view of raw sales transactions.  Columns are unexpanded
-      copies of the source; only _loaded_at and _source_relation are added.
+  - name: raw_sales_fact
+    description: "Bronze view of raw sales transactions."
     columns:
       - name: order_id
         tests: [not_null]
@@ -13,29 +10,29 @@ models:
         tests: [not_null]
       - name: payment_method
         tests: [not_null]
-      - name: _loaded_at
+      - name: load_ts
         tests: [not_null]
 
-  - name: customers
+  - name: raw_customers
     description: "Bronze view of raw customer records."
     columns:
       - name: customer_id
         tests: [not_null]
-      - name: _loaded_at
+      - name: load_ts
         tests: [not_null]
 
-  - name: products
+  - name: raw_products
     description: "Bronze view of raw product master."
     columns:
       - name: product_id
         tests: [not_null]
-      - name: _loaded_at
+      - name: load_ts
         tests: [not_null]
 
-  - name: product_category
+  - name: raw_product_category
     description: "Bronze view of raw product category enrichment."
     columns:
       - name: product_id
         tests: [not_null]
-      - name: _loaded_at
+      - name: load_ts
         tests: [not_null]
