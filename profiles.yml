@@ -1,0 +1,29 @@
+newday:
+  target: dev
+  outputs:
+
+    dev:
+      type: snowflake
+      account:   "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:      "{{ env_var('SNOWFLAKE_USER') }}"
+      password:  "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role:      "{{ env_var('SNOWFLAKE_ROLE',      'DEVELOPER') }}"
+      database:  "{{ env_var('SNOWFLAKE_DATABASE',  'NEWDAY_DEV') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'COMPUTE_WH') }}"
+      schema:    RAW
+      threads:   4
+      query_tag: "dbt_dev"
+      client_session_keep_alive: false
+
+    prod:
+      type: snowflake
+      account:   "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user:      "{{ env_var('SNOWFLAKE_USER') }}"
+      password:  "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role:      "{{ env_var('SNOWFLAKE_ROLE',      'DEVELOPER') }}"
+      database:  "{{ env_var('SNOWFLAKE_DATABASE',  'NEWDAY') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'COMPUTE_WH') }}"
+      schema:    RAW
+      threads:   8
+      query_tag: "dbt_prod"
+      client_session_keep_alive: false
