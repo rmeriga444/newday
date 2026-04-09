@@ -3,8 +3,8 @@
 select
     {{ column_name }}               as null_surrogate_key,
     count(*)                        as affected_rows,
-    min(_processed_at)              as earliest_affected_load,
-    max(_processed_at)              as latest_affected_load,
+    min(load_ts)              as earliest_affected_load,
+    max(load_ts)              as latest_affected_load,
     'NULL surrogate key detected in column: {{ column_name }}'
                                     as failure_reason
 

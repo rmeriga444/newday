@@ -6,8 +6,8 @@ with duplicates as (
         {{ column_name }}                       as surrogate_key,
         {{ natural_key }}                       as natural_key_value,
         count(*)                                as occurrence_count,
-        min(_processed_at)                      as first_seen,
-        max(_processed_at)                      as last_seen
+        min(load_ts)                      as first_seen,
+        max(load_ts)                      as last_seen
 
     from {{ model }}
     group by 1, 2
