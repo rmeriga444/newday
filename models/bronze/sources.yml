@@ -9,10 +9,6 @@ sources:
     tables:
       - name: sales_fact
         description: "One row per order line item."
-        loaded_at_field: ingest_ts
-        freshness:
-          warn_after:  { count: 24, period: hour }
-          error_after: { count: 48, period: hour }
         columns:
           - name: order_id
             tests: [unique, not_null]
@@ -32,10 +28,6 @@ sources:
 
       - name: customer
         description: "Customer master."
-        loaded_at_field: ingest_ts
-        freshness:
-          warn_after:  { count: 24, period: hour }
-          error_after: { count: 48, period: hour }
         columns:
           - name: customer_id
             tests: [unique, not_null]
