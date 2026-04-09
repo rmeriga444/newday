@@ -20,59 +20,21 @@ daily as (
 
     select
         order_date,
-        to_char(order_date, 'YYYY-MM-DD')       as date_label,
-        to_char(order_date, 'Day')              as day_name,
-        order_day_of_week,
-        order_month,
-        order_quarter,
-        order_year,
+        round(sum(order_amount), 2)             as total_revenue,
         count(distinct order_sk)                as total_orders,
-        count(distinct customer_sk)             as unique_customers,
-        sum(case when not is_zero_quantity then order_quantity    else 0 end) as total_units_sold,
-        round(sum(case when not is_zero_quantity then order_amount     else 0 end), 2) as gross_revenue,
-        round(sum(case when not is_zero_quantity then net_order_amount else 0 end), 2) as net_revenue,
-        round(sum(case when not is_zero_quantity then discount_amount  else 0 end), 2) as total_discounts,
-        round(sum(case when not is_zero_quantity then shipping_cost    else 0 end), 2) as total_shipping_collected,
-        round(avg(case when not is_zero_quantity then order_amount end), 2)            as avg_order_value,
-        count(distinct case when is_zero_quantity        then order_sk end) as zero_qty_orders,
-        count(distinct case when is_flagged_for_review   then order_sk end) as flagged_orders,
-        round(
-            avg(sum(case when not is_zero_quantity then order_amount else 0 end)) over (
-                order by order_date
-                rows between 6 preceding and current row
-            )
-        , 2)                                    as rolling_7d_avg_revenue
+        round(avg(order_amount), 2)             as avg_order_value
 
     from base
-    group by
-        order_date,
-        to_char(order_date, 'YYYY-MM-DD'),
-        to_char(order_date, 'Day'),
-        order_day_of_week,
-        order_month,
-        order_quarter,
-        order_year
-
-),
-
-final as (
-
-    select
-        *,
-        lag(gross_revenue) over (order by order_date)   as prev_day_revenue,
-        round(
-            {{ safe_divide(
-                '(gross_revenue - lag(gross_revenue) over (order by order_date)) * 100.0',
-                'nullif(lag(gross_revenue) over (order by order_date), 0)'
-            ) }}
-        , 2)                                    as dod_revenue_growth_pct,
-        {{ get_start_date() }}                  as filter_start_date,
-        {{ get_end_date() }}                    as filter_end_date,
-        convert_timezone('UTC', current_timestamp())                     as load_ts
-
-    from daily
+    group by order_date
 
 )
 
-select * from final
+select
+    order_date,
+    total_revenue,
+    total_orders,
+    avg_order_value,
+    convert_timezone('UTC', current_timestamp()) as load_ts
+
+from daily
 order by order_date
