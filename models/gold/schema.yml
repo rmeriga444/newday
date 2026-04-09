@@ -1,0 +1,233 @@
+version: 2
+
+models:
+
+  # ── revenue_by_category_monthly  (Q1) ────────────────────────
+  - name: revenue_by_category_monthly
+    description: >
+      Monthly gross and net revenue by product category with
+      MoM growth and within-month rank.  Zero-quantity orders excluded.
+    tests:
+      - model_freshness:
+          column_name: _refreshed_at
+          warn_after_hours: 24
+          error_after_hours: 48
+      - test_sum_threshold_by_product:
+          column_name: gross_revenue
+          group_col: category_name
+          min_value: 0
+          allow_zero: false
+      - test_dynamic_volume_threshold:
+          column_name: order_month
+          date_part: month
+          lookback_periods: 6
+          std_dev_multiplier: 2
+          min_periods: 3
+      - assert_grain_is_unique:
+          grain_columns:
+            - order_month
+            - category_name
+            - subcategory
+    columns:
+      - name: order_month
+        tests: [not_null]
+      - name: category_name
+        tests:
+          - not_null
+          - assert_column_not_regressed:
+              max_null_pct: 0
+      - name: gross_revenue
+        tests:
+          - not_null
+          - assert_positive_amount
+      - name: net_revenue
+        tests: [not_null]
+      - name: total_orders
+        tests: [not_null]
+      - name: revenue_rank_in_month
+        tests: [not_null]
+      - name: _refreshed_at
+        tests: [not_null]
+
+  # ── revenue_edge_cases  (Q2) ─────────────────────────────────
+  - name: revenue_edge_cases
+    description: >
+      Extends Q1 to expose zero-quantity handling and payment method
+      percentage split per category × month slice.
+    columns:
+      - name: order_month
+        tests: [not_null]
+      - name: category_name
+        tests: [not_null]
+      - name: payment_method
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['credit_card', 'debit_card', 'paypal', 'bank_transfer']
+      - name: pct_orders_by_payment
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+      - name: pct_revenue_by_payment
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+      - name: _refreshed_at
+        tests: [not_null]
+
+  # ── customer_segments  (Q3) ──────────────────────────────────
+  - name: customer_segments
+    description: >
+      Customer value tiers (High / Medium / Low) based on lifetime
+      spend, with full profile and order history metrics.
+    tests:
+      - model_freshness:
+          column_name: _refreshed_at
+          warn_after_hours: 24
+          error_after_hours: 48
+      - test_sum_threshold_by_product:
+          column_name: total_gross_spend
+          group_col: customer_tier
+          min_value: 0
+          allow_zero: false
+      - assert_grain_is_unique:
+          grain_columns:
+            - customer_sk
+            - customer_id
+    columns:
+      - name: customer_sk
+        tests: [unique, not_null]
+      - name: customer_id
+        tests: [unique, not_null]
+      - name: customer_tier
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['High Value', 'Medium Value', 'Low Value']
+          - assert_column_values_not_blank
+          - assert_column_not_regressed:
+              max_null_pct: 0
+      - name: total_gross_spend
+        tests: [not_null]
+      - name: total_orders
+        tests: [not_null]
+      - name: rank_within_tier
+        tests: [not_null]
+      - name: _refreshed_at
+        tests: [not_null]
+
+  # ── payment_analysis  (Q4) ───────────────────────────────────
+  - name: payment_analysis
+    description: >
+      Lifetime performance metrics per payment method: revenue,
+      AOV, order share, and revenue share.
+    columns:
+      - name: payment_method
+        tests: [unique, not_null]
+      - name: total_gross_revenue
+        tests:
+          - not_null
+          - assert_positive_amount
+      - name: pct_of_total_orders
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+      - name: pct_of_total_revenue
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+      - name: revenue_rank
+        tests: [not_null]
+      - name: _refreshed_at
+        tests: [not_null]
+
+  # ── flagged_orders  (Q5) ──────────────────────────────────────
+  - name: flagged_orders
+    description: >
+      Orders exceeding discount or shipping thresholds — the ops team's
+      review queue.  Every row has at least one flag raised.
+    tests:
+      - model_freshness:
+          column_name: _refreshed_at
+          warn_after_hours: 24
+          error_after_hours: 48
+      - test_sum_threshold_by_product:
+          column_name: order_amount
+          group_col: payment_method
+          min_value: 0
+          allow_zero: false
+      - assert_grain_is_unique:
+          grain_columns:
+            - order_sk
+            - order_id
+    columns:
+      - name: order_sk
+        tests: [unique, not_null]
+      - name: order_id
+        tests: [unique, not_null]
+      - name: total_flags
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 1
+              max_value: 2
+      - name: flag_high_discount
+        tests: [not_null]
+      - name: flag_high_shipping
+        tests: [not_null]
+      - name: flag_reason
+        tests: [not_null]
+      - name: _refreshed_at
+        tests: [not_null]
+
+  # ── seasonal_patterns  (Q6) ───────────────────────────────────
+  - name: seasonal_patterns
+    description: >
+      Seasonal analytics per category × month: MoM and QoQ growth,
+      best/worst month flags, and coefficient of variation.
+    columns:
+      - name: order_month
+        tests: [not_null]
+      - name: category_name
+        tests: [not_null]
+      - name: gross_revenue
+        tests: [not_null]
+      - name: coefficient_of_variation
+        tests: [not_null]
+      - name: volatility_label
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Low', 'Moderate', 'High']
+      - name: is_best_month
+        tests: [not_null]
+      - name: is_worst_month
+        tests: [not_null]
+      - name: _refreshed_at
+        tests: [not_null]
+
+  # ── daily_revenue  (Q7) ──────────────────────────────────────
+  - name: daily_revenue
+    description: >
+      Daily revenue totals within a parametric date window supplied
+      via --vars at run time.  Includes 7-day rolling average and
+      day-over-day growth rate.
+    columns:
+      - name: order_date
+        tests: [unique, not_null]
+      - name: gross_revenue
+        tests: [not_null]
+      - name: total_orders
+        tests: [not_null]
+      - name: filter_start_date
+        tests: [not_null]
+      - name: filter_end_date
+        tests: [not_null]
+      - name: _refreshed_at
+        tests: [not_null]

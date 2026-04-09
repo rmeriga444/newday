@@ -1,0 +1,201 @@
+version: 2
+
+models:
+
+  # ── sales_fact ────────────────────────────────────────────────
+  - name: sales_fact
+    description: >
+      Cleaned, typed, incrementally-loaded sales transactions with
+      surrogate keys, derived financial metrics, and business flags.
+    tests:
+      - model_freshness:
+          column_name: _processed_at
+          warn_after_hours: 24
+          error_after_hours: 48
+      - test_row_count_match_by_date:
+          column_name: order_date
+          compare_model: ref('sales_fact')
+          compare_col: order_date
+          date_part: day
+          threshold_pct: 0
+      - test_dynamic_volume_threshold:
+          column_name: order_date
+          date_part: day
+          lookback_periods: 30
+          std_dev_multiplier: 2
+          min_periods: 7
+      - test_sum_threshold_by_product:
+          column_name: order_amount
+          group_col: product_id
+          min_value: 0
+          allow_zero: false
+      - assert_incremental_no_data_loss:
+          column_name: order_date
+          source_model: ref('sales_fact')
+          source_col: order_date
+          date_part: day
+          tolerance_pct: 0
+    columns:
+      - name: order_sk
+        description: "MD5 surrogate key on order_id.  True primary key of this table."
+        tests:
+          - unique
+          - not_null
+          - assert_no_null_surrogate_keys
+          - assert_no_duplicate_surrogate_keys:
+              natural_key: order_id
+      - name: customer_sk
+        description: "MD5 surrogate key on customer_id."
+        tests: [not_null]
+      - name: product_sk
+        description: "MD5 surrogate key on product_id."
+        tests: [not_null]
+      - name: order_id
+        description: "Source natural key — retained for lineage."
+        tests: [unique, not_null]
+      - name: order_date
+        tests:
+          - not_null
+          - assert_no_future_dates
+      - name: order_amount
+        tests:
+          - not_null
+          - assert_positive_amount
+      - name: order_quantity
+        tests: [not_null]
+      - name: discount_applied
+        description: >
+          Fractional discount 0–1.  Coalesced from NULL to 0 in Silver.
+          Use discount_was_null to identify originally-missing values.
+        tests:
+          - not_null
+          - assert_valid_fraction
+      - name: shipping_cost
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+      - name: payment_method
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['credit_card', 'debit_card', 'paypal', 'bank_transfer']
+          - assert_column_values_not_blank
+      - name: net_order_amount
+        tests:
+          - not_null
+          - assert_metric_consistency:
+              expression: "order_amount * (1 - discount_applied)"
+              tolerance: 0.01
+      - name: is_zero_quantity
+        tests: [not_null]
+      - name: is_high_discount
+        tests: [not_null]
+      - name: is_high_shipping
+        tests: [not_null]
+      - name: _processed_at
+        tests: [not_null]
+
+  # ── customers ─────────────────────────────────────────────────
+  - name: customers
+    description: "Cleaned customer master with surrogate key and is_active flag."
+    columns:
+      - name: customer_sk
+        tests: [unique, not_null]
+      - name: customer_id
+        tests: [unique, not_null]
+      - name: customer_email
+        tests:
+          - not_null
+          - unique
+          - dbt_expectations.expect_column_values_to_match_regex:
+              regex: '^[^@\s]+@[^@\s]+\.[^@\s]+$'
+      - name: status
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['active', 'cancelled']
+      - name: is_active
+        tests: [not_null]
+      - name: valid_from
+        tests: [not_null]
+      - name: _processed_at
+        tests: [not_null]
+
+  # ── products ──────────────────────────────────────────────────
+  - name: products
+    description: "Cleaned product master with surrogate key."
+    columns:
+      - name: product_sk
+        tests: [unique, not_null]
+      - name: product_id
+        tests: [unique, not_null]
+      - name: product_name
+        tests: [not_null]
+      - name: _processed_at
+        tests: [not_null]
+
+  # ── product_category ──────────────────────────────────────────
+  - name: product_category
+    description: >
+      Cleaned product-category enrichment with composite surrogate key,
+      boolean flags, typed numerics, and derived margin amount.
+    columns:
+      - name: product_category_sk
+        tests: [unique, not_null]
+      - name: product_sk
+        tests: [not_null]
+      - name: product_id
+        tests: [unique, not_null]
+      - name: category_name
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Electronics', 'Clothing', 'Home & Garden', 'Sports', 'Books']
+      - name: cost_price
+        tests:
+          - not_null
+          - assert_positive_amount
+      - name: retail_price
+        tests:
+          - not_null
+          - assert_positive_amount
+      - name: margin_percent
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+      - name: is_discontinued
+        tests: [not_null]
+      - name: _processed_at
+        tests: [not_null]
+
+  # ── sales_enriched ────────────────────────────────────────────
+  - name: sales_enriched
+    description: >
+      Central denormalised Silver view joining sales, products, categories,
+      and customers.  All Gold models read from this single source of truth.
+    columns:
+      - name: order_sk
+        tests: [unique, not_null]
+      - name: order_id
+        tests: [unique, not_null]
+      - name: order_date
+        tests: [not_null]
+      - name: category_name
+        tests:
+          - not_null
+          - assert_column_values_not_blank
+          - assert_column_not_regressed:
+              max_null_pct: 0
+      - name: payment_method
+        tests: [not_null]
+      - name: order_amount
+        tests:
+          - not_null
+          - assert_positive_amount
+      - name: discount_applied
+        tests:
+          - not_null
+          - assert_valid_fraction

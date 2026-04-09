@@ -1,0 +1,63 @@
+name: 'newday'
+version: '1.0.0'
+config-version: 2
+
+profile: 'newday'
+
+model-paths:    ["models"]
+macro-paths:    ["macros"]
+test-paths:     ["tests"]
+seed-paths:     ["seeds"]
+snapshot-paths: ["snapshots"]
+docs-paths:     ["docs"]
+
+target-path:    "target"
+clean-targets:  ["target", "dbt_packages"]
+
+# ─────────────────────────────────────────────────────────────────────
+#  Model materialisation by layer  (Medallion: Bronze → Silver → Gold)
+# ─────────────────────────────────────────────────────────────────────
+models:
+  newday:
+
+    bronze:
+      +materialized: view
+      +schema: bronze
+      +tags: ['bronze', 'raw']
+      +docs:
+        node_color: '#b5651d'
+
+    silver:
+      +materialized: incremental
+      +incremental_strategy: merge
+      +schema: silver
+      +tags: ['silver', 'cleaned']
+      +docs:
+        node_color: '#708090'
+      +on_schema_change: append_new_columns
+
+    gold:
+      +materialized: table
+      +schema: gold
+      +tags: ['gold', 'mart']
+      +docs:
+        node_color: '#DAA520'
+
+# ─────────────────────────────────────────────────────────────────────
+#  Project-wide variables  (override per env with --vars '{}')
+# ─────────────────────────────────────────────────────────────────────
+vars:
+  # Date range defaults – used by the date_range_filter macro (Q7)
+  start_date: '2024-01-01'
+  end_date:   '2024-12-31'
+
+  # Customer tier thresholds (Q3)
+  tier_high_value:   1000
+  tier_medium_value: 500
+
+  # Order-review thresholds (Q5)
+  flag_discount_threshold: 0.30   # 30 %
+  flag_shipping_pct:        0.10  # 10 % of order_amount
+
+  # Hash-key delimiter — changing this invalidates all SK columns
+  sk_delimiter: '||'
