@@ -69,11 +69,11 @@ newday/
 
 ### Bronze
 
-Bronze models are views. They sit directly on top of the RAW schema tables and do
-nothing except add two audit columns: `_loaded_at` (current timestamp) and
-`_source_relation` (schema.table name). No casting, no filtering, no logic. The
-point is to have a stable, always-current mirror of the source that Silver can
-depend on without being coupled to the RAW schema directly.
+Bronze models are views. They sit directly on top of the RAW schema tables and
+pass all source columns through unchanged. A single `load_ts` timestamp column is
+added to record when the row was queried. No casting, no filtering, no business
+logic. The point is to have a stable, always-current mirror of the source that
+Silver can depend on without being coupled to the RAW schema directly.
 
 ### Silver
 
