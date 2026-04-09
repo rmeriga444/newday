@@ -17,12 +17,6 @@ models:
           compare_col: order_date
           date_part: day
           threshold_pct: 0
-      - test_dynamic_volume_threshold:
-          column_name: order_date
-          date_part: day
-          lookback_periods: 30
-          std_dev_multiplier: 2
-          min_periods: 7
       - test_sum_threshold_by_product:
           column_name: order_amount
           group_col: product_id

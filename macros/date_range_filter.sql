@@ -1,4 +1,4 @@
-{% macro get_start_date(default_date='2024-01-01') %}
+{% macro get_start_date(default_date='2023-01-01') %}
   '{{ var("start_date", default_date) }}'::date
 {% endmacro %}
 
