@@ -67,12 +67,12 @@ models:
       - name: pct_orders_by_payment
         tests:
           - not_null
-          - dbt_expectations.expect_column_values_to_be_between:
+          - dbt_utils.accepted_range:
               min_value: 0
               max_value: 100
       - name: pct_revenue_by_payment
         tests:
-          - dbt_expectations.expect_column_values_to_be_between:
+          - dbt_utils.accepted_range:
               min_value: 0
               max_value: 100
       - name: _refreshed_at
@@ -134,12 +134,12 @@ models:
       - name: pct_of_total_orders
         tests:
           - not_null
-          - dbt_expectations.expect_column_values_to_be_between:
+          - dbt_utils.accepted_range:
               min_value: 0
               max_value: 100
       - name: pct_of_total_revenue
         tests:
-          - dbt_expectations.expect_column_values_to_be_between:
+          - dbt_utils.accepted_range:
               min_value: 0
               max_value: 100
       - name: revenue_rank
@@ -174,7 +174,7 @@ models:
       - name: total_flags
         tests:
           - not_null
-          - dbt_expectations.expect_column_values_to_be_between:
+          - dbt_utils.accepted_range:
               min_value: 1
               max_value: 2
       - name: flag_high_discount
