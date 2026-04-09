@@ -1,7 +1,7 @@
 {{
     config(
         materialized = 'table',
-        cluster_by   = ['order_year', 'category_name'],
+        cluster_by   = ['order_month', 'category_name'],
         tags         = ['gold', 'revenue', 'q1']
     )
 }}
