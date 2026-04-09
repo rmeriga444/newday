@@ -1,0 +1,71 @@
+version: 2
+
+sources:
+  - name: raw
+    database: "{{ env_var('SNOWFLAKE_DATABASE', 'NEWDAY_DEV') }}"
+    schema: RAW
+    description: >
+      Raw source tables loaded from CSV files into Snowflake.
+      No transformations are applied at this layer — data is consumed
+      exactly as delivered by upstream systems.
+    loader: fivetran            # swap to 'airbyte', 'custom', etc. as needed
+    loaded_at_field: _loaded_at # added by the bronze model, not the raw table
+
+    freshness:
+      warn_after:  { count: 24, period: hour }
+      error_after: { count: 48, period: hour }
+
+    tables:
+
+      - name: sales_fact
+        description: >
+          One row per order line item.  discount_applied and shipping_cost
+          are nullable in the source — handled explicitly in Silver.
+        columns:
+          - name: order_id
+            description: "Source primary key."
+            tests: [unique, not_null]
+          - name: product_id
+            tests: [not_null]
+          - name: customer_id
+            tests: [not_null]
+          - name: order_date
+            tests: [not_null]
+          - name: order_amount
+            tests: [not_null]
+          - name: payment_method
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['credit_card', 'debit_card', 'paypal', 'bank_transfer']
+
+      - name: customer
+        description: "Customer master with SCD-style validity window."
+        columns:
+          - name: customer_id
+            tests: [unique, not_null]
+          - name: customer_email
+            tests: [not_null, unique]
+          - name: status
+            tests:
+              - accepted_values:
+                  values: ['active', 'cancelled']
+
+      - name: product
+        description: "Product master — links products to categories."
+        columns:
+          - name: product_id
+            tests: [unique, not_null]
+
+      - name: product_category
+        description: >
+          Full product enrichment: pricing, margin, stock levels,
+          category hierarchy.  product_id is the join key to product.
+        columns:
+          - name: product_id
+            tests: [unique, not_null]
+          - name: category_name
+            tests:
+              - accepted_values:
+                  values: ['Electronics', 'Clothing', 'Home & Garden',
+                           'Sports', 'Books']

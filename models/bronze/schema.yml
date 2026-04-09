@@ -1,0 +1,41 @@
+version: 2
+
+models:
+
+  - name: sales_fact
+    description: >
+      Bronze view of raw sales transactions.  Columns are unexpanded
+      copies of the source; only _loaded_at and _source_relation are added.
+    columns:
+      - name: order_id
+        tests: [not_null]
+      - name: order_amount
+        tests: [not_null]
+      - name: payment_method
+        tests: [not_null]
+      - name: _loaded_at
+        tests: [not_null]
+
+  - name: customers
+    description: "Bronze view of raw customer records."
+    columns:
+      - name: customer_id
+        tests: [not_null]
+      - name: _loaded_at
+        tests: [not_null]
+
+  - name: products
+    description: "Bronze view of raw product master."
+    columns:
+      - name: product_id
+        tests: [not_null]
+      - name: _loaded_at
+        tests: [not_null]
+
+  - name: product_category
+    description: "Bronze view of raw product category enrichment."
+    columns:
+      - name: product_id
+        tests: [not_null]
+      - name: _loaded_at
+        tests: [not_null]
