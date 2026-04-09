@@ -9,6 +9,6 @@ select
     product_id,
     product_name,
     product_category_id,
-    current_timestamp()                     as load_ts
+    convert_timezone('UTC', current_timestamp())                     as load_ts
 
 from {{ source('raw', 'product') }}

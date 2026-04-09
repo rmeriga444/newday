@@ -68,7 +68,7 @@ final as (
         , 2)                                    as dod_revenue_growth_pct,
         {{ get_start_date() }}                  as filter_start_date,
         {{ get_end_date() }}                    as filter_end_date,
-        current_timestamp()                     as _refreshed_at
+        convert_timezone('UTC', current_timestamp())                     as load_ts
 
     from daily
 

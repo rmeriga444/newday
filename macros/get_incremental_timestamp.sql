@@ -5,8 +5,8 @@
   {% if is_incremental() %}
 
     where {{ source_ts_col }} > (
-        select coalesce(max({{ wm_col }}), '1900-01-01'::timestamp)
-        from {{ this }}
+        select coalesce(max(t.{{ wm_col }}), '1900-01-01'::timestamp_ntz)
+        from {{ this }} t
     )
 
   {% endif %}

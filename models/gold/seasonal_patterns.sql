@@ -142,7 +142,7 @@ assembled as (
         cv.coefficient_of_variation,
         cv.volatility_label,
 
-        current_timestamp()                     as _refreshed_at
+        convert_timezone('UTC', current_timestamp())                     as load_ts
 
     from monthly        m
     inner join quarterly    q   on m.category_name     = q.category_name

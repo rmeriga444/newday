@@ -2,14 +2,13 @@ version: 2
 
 models:
 
-  # ── revenue_by_category_monthly  (Q1) ────────────────────────
   - name: revenue_by_category_monthly
     description: >
       Monthly gross and net revenue by product category with
       MoM growth and within-month rank.  Zero-quantity orders excluded.
     tests:
       - model_freshness:
-          column_name: _refreshed_at
+          column_name: load_ts
           warn_after_hours: 24
           error_after_hours: 48
       - test_sum_threshold_by_product:
@@ -21,13 +20,14 @@ models:
           column_name: order_month
           date_part: month
           lookback_periods: 6
-          std_dev_multiplier: 2
-          min_periods: 3
+          std_dev_multiplier: 3
+          min_periods: 6
       - assert_grain_is_unique:
           grain_columns:
             - order_month
             - category_name
             - subcategory
+
     columns:
       - name: order_month
         tests: [not_null]
@@ -46,10 +46,9 @@ models:
         tests: [not_null]
       - name: revenue_rank_in_month
         tests: [not_null]
-      - name: _refreshed_at
+      - name: load_ts
         tests: [not_null]
 
-  # ── revenue_edge_cases  (Q2) ─────────────────────────────────
   - name: revenue_edge_cases
     description: >
       Extends Q1 to expose zero-quantity handling and payment method
@@ -75,17 +74,16 @@ models:
           - dbt_utils.accepted_range:
               min_value: 0
               max_value: 100
-      - name: _refreshed_at
+      - name: load_ts
         tests: [not_null]
 
-  # ── customer_segments  (Q3) ──────────────────────────────────
   - name: customer_segments
     description: >
       Customer value tiers (High / Medium / Low) based on lifetime
       spend, with full profile and order history metrics.
     tests:
       - model_freshness:
-          column_name: _refreshed_at
+          column_name: load_ts
           warn_after_hours: 24
           error_after_hours: 48
       - test_sum_threshold_by_product:
@@ -97,6 +95,7 @@ models:
           grain_columns:
             - customer_sk
             - customer_id
+
     columns:
       - name: customer_sk
         tests: [unique, not_null]
@@ -116,10 +115,9 @@ models:
         tests: [not_null]
       - name: rank_within_tier
         tests: [not_null]
-      - name: _refreshed_at
+      - name: load_ts
         tests: [not_null]
 
-  # ── payment_analysis  (Q4) ───────────────────────────────────
   - name: payment_analysis
     description: >
       Lifetime performance metrics per payment method: revenue,
@@ -144,17 +142,16 @@ models:
               max_value: 100
       - name: revenue_rank
         tests: [not_null]
-      - name: _refreshed_at
+      - name: load_ts
         tests: [not_null]
 
-  # ── flagged_orders  (Q5) ──────────────────────────────────────
   - name: flagged_orders
     description: >
       Orders exceeding discount or shipping thresholds — the ops team's
       review queue.  Every row has at least one flag raised.
     tests:
       - model_freshness:
-          column_name: _refreshed_at
+          column_name: load_ts
           warn_after_hours: 24
           error_after_hours: 48
       - test_sum_threshold_by_product:
@@ -166,27 +163,27 @@ models:
           grain_columns:
             - order_sk
             - order_id
+
     columns:
       - name: order_sk
         tests: [unique, not_null]
       - name: order_id
         tests: [unique, not_null]
-      - name: total_flags
+      - name: flag_count
         tests:
           - not_null
           - dbt_utils.accepted_range:
               min_value: 1
               max_value: 2
-      - name: flag_high_discount
+      - name: is_high_discount
         tests: [not_null]
-      - name: flag_high_shipping
+      - name: is_high_shipping
         tests: [not_null]
-      - name: flag_reason
+      - name: flag_reasons
         tests: [not_null]
-      - name: _refreshed_at
+      - name: load_ts
         tests: [not_null]
 
-  # ── seasonal_patterns  (Q6) ───────────────────────────────────
   - name: seasonal_patterns
     description: >
       Seasonal analytics per category × month: MoM and QoQ growth,
@@ -204,15 +201,14 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['Low', 'Moderate', 'High']
+              values: ['Stable', 'Moderate', 'High Volatility']
       - name: is_best_month
         tests: [not_null]
       - name: is_worst_month
         tests: [not_null]
-      - name: _refreshed_at
+      - name: load_ts
         tests: [not_null]
 
-  # ── daily_revenue  (Q7) ──────────────────────────────────────
   - name: daily_revenue
     description: >
       Daily revenue totals within a parametric date window supplied
@@ -229,5 +225,5 @@ models:
         tests: [not_null]
       - name: filter_end_date
         tests: [not_null]
-      - name: _refreshed_at
+      - name: load_ts
         tests: [not_null]

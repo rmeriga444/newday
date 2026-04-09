@@ -20,6 +20,6 @@ select
     discontinued,
     launch_date,
     last_updated,
-    current_timestamp()                     as load_ts
+    convert_timezone('UTC', current_timestamp())                     as load_ts
 
 from {{ source('raw', 'product_category') }}
