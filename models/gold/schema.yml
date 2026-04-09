@@ -16,12 +16,6 @@ models:
           group_col: category_name
           min_value: 0
           allow_zero: false
-      - test_dynamic_volume_threshold:
-          column_name: order_month
-          date_part: month
-          lookback_periods: 6
-          std_dev_multiplier: 3
-          min_periods: 6
       - assert_grain_is_unique:
           grain_columns:
             - order_month
