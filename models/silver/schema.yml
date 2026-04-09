@@ -2,14 +2,13 @@ version: 2
 
 models:
 
-  # ── sales_fact ────────────────────────────────────────────────
   - name: sales_fact
     description: >
       Cleaned, typed, incrementally-loaded sales transactions with
       surrogate keys, derived financial metrics, and business flags.
     tests:
       - model_freshness:
-          column_name: _processed_at
+          column_name: load_ts
           warn_after_hours: 24
           error_after_hours: 48
       - test_row_count_match_by_date:
@@ -74,7 +73,7 @@ models:
         tests:
           - not_null
           - dbt_utils.accepted_range:
-              min_value: 0      
+              min_value: 0
       - name: payment_method
         tests:
           - not_null
@@ -93,10 +92,9 @@ models:
         tests: [not_null]
       - name: is_high_shipping
         tests: [not_null]
-      - name: _processed_at
+      - name: load_ts
         tests: [not_null]
 
-  # ── customers ─────────────────────────────────────────────────
   - name: customers
     description: "Cleaned customer master with surrogate key and is_active flag."
     columns:
@@ -117,10 +115,9 @@ models:
         tests: [not_null]
       - name: valid_from
         tests: [not_null]
-      - name: _processed_at
+      - name: load_ts
         tests: [not_null]
 
-  # ── products ──────────────────────────────────────────────────
   - name: products
     description: "Cleaned product master with surrogate key."
     columns:
@@ -130,10 +127,9 @@ models:
         tests: [unique, not_null]
       - name: product_name
         tests: [not_null]
-      - name: _processed_at
+      - name: load_ts
         tests: [not_null]
 
-  # ── product_category ──────────────────────────────────────────
   - name: product_category
     description: >
       Cleaned product-category enrichment with composite surrogate key,
@@ -166,10 +162,9 @@ models:
               max_value: 100
       - name: is_discontinued
         tests: [not_null]
-      - name: _processed_at
+      - name: load_ts
         tests: [not_null]
 
-  # ── sales_enriched ────────────────────────────────────────────
   - name: sales_enriched
     description: >
       Central denormalised Silver view joining sales, products, categories,

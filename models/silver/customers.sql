@@ -11,7 +11,7 @@
 with source as (
 
     select * from {{ ref('raw_customers') }}
-    {{ get_incremental_timestamp('load_ts', '_processed_at') }}
+    {{ get_incremental_timestamp('load_ts', 'load_ts') }}
 
 ),
 
@@ -26,7 +26,7 @@ casted as (
         lower(trim(status)) = 'active'                      as is_active,
         try_cast(start_date as date)                        as valid_from,
         try_cast(end_date as date)                          as valid_to,
-        current_timestamp()                                 as _processed_at
+        convert_timezone('UTC', current_timestamp())                                 as load_ts
 
     from source
     where customer_id is not null

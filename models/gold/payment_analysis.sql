@@ -58,7 +58,7 @@ final as (
         round({{ safe_divide('pa.total_gross_revenue * 100.0', 'g.grand_gross_revenue') }}, 2) as pct_of_total_revenue,
         rank() over (order by pa.total_gross_revenue desc)  as revenue_rank,
         rank() over (order by pa.total_orders desc)         as order_volume_rank,
-        current_timestamp()                     as _refreshed_at
+        convert_timezone('UTC', current_timestamp())                     as load_ts
 
     from payment_agg pa
     cross join grand g

@@ -16,6 +16,6 @@ select
     discount_applied,
     shipping_cost,
     created_at,
-    current_timestamp()                     as load_ts
+    convert_timezone('UTC', current_timestamp())                     as load_ts
 
 from {{ source('raw', 'sales_fact') }}

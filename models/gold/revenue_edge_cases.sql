@@ -73,7 +73,7 @@ final as (
         round({{ safe_divide('ps.total_orders * 100.0',  'cm.cat_total_orders')  }}, 2) as pct_orders_by_payment,
         round({{ safe_divide('ps.gross_revenue * 100.0', 'cm.cat_gross_revenue') }}, 2) as pct_revenue_by_payment,
         round({{ safe_divide('ps.gross_revenue',         'ps.total_orders')      }}, 2) as avg_order_value,
-        current_timestamp()                     as _refreshed_at
+        convert_timezone('UTC', current_timestamp())                     as load_ts
 
     from payment_slices ps
     inner join category_month_totals cm

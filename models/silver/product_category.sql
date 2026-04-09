@@ -11,7 +11,7 @@
 with source as (
 
     select * from {{ ref('raw_product_category') }}
-    {{ get_incremental_timestamp('load_ts', '_processed_at') }}
+    {{ get_incremental_timestamp('load_ts', 'load_ts') }}
 
 ),
 
@@ -49,7 +49,7 @@ casted as (
 
         try_cast(launch_date as date)                                    as launch_date,
         try_cast(last_updated as date)                                   as last_updated,
-        current_timestamp()                                              as _processed_at
+        convert_timezone('UTC', current_timestamp())                                              as load_ts
 
     from source
     where product_id is not null

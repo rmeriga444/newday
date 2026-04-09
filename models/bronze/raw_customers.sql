@@ -12,6 +12,6 @@ select
     start_date,
     end_date,
     status,
-    current_timestamp()                     as load_ts
+    convert_timezone('UTC', current_timestamp())                     as load_ts
 
 from {{ source('raw', 'customer') }}

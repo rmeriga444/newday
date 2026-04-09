@@ -81,7 +81,7 @@ segmented as (
             else 3
         end                                     as tier_sort_order,
 
-        current_timestamp()                     as _refreshed_at
+        convert_timezone('UTC', current_timestamp())                     as load_ts
 
     from customers c
     left join customer_metrics m

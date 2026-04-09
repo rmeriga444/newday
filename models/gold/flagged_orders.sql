@@ -53,7 +53,7 @@ evaluated as (
             ' | '
         )                                       as flag_reasons,
         created_at,
-        current_timestamp()                     as _refreshed_at
+        convert_timezone('UTC', current_timestamp())                     as load_ts
 
     from enriched
 

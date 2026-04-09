@@ -11,7 +11,7 @@
 with source as (
 
     select * from {{ ref('raw_sales_fact') }}
-    {{ get_incremental_timestamp('load_ts', '_processed_at') }}
+    {{ get_incremental_timestamp('load_ts', 'load_ts') }}
 
 ),
 
@@ -68,7 +68,7 @@ casted as (
         coalesce(try_cast(shipping_cost as numeric(18, 2)), 0)
             > ({{ var('flag_shipping_pct') }} * try_cast(order_amount as numeric(18, 2)))   as is_high_shipping,
 
-        current_timestamp()                                                                 as _processed_at
+        convert_timezone('UTC', current_timestamp())                                                                 as load_ts
 
     from source
     where order_id is not null

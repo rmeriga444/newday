@@ -58,7 +58,7 @@ with_growth as (
             ) }} * 100
         , 2)                                    as mom_revenue_growth_pct,
 
-        current_timestamp()                     as _refreshed_at
+        convert_timezone('UTC', current_timestamp())                     as load_ts
 
     from monthly_category
 

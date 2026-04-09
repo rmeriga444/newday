@@ -108,7 +108,7 @@ enriched as (
         s.is_high_shipping,
         s.is_high_discount or s.is_high_shipping    as is_flagged_for_review,
 
-        s._processed_at
+        s.load_ts
 
     from sales s
     left join products   p   on s.product_sk  = p.product_sk
